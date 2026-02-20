@@ -39,7 +39,7 @@ export const AletwendeSend: React.FC = () => {
     {
       id: 'heavy-duty',
       label: 'Heavy Duty',
-      icon: '👕',
+      icon: '🏗️',
       color: 'bg-teal-600 hover:bg-teal-700',
       description: 'Heavy equipment',
       isDark: true
