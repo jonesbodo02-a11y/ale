@@ -65,8 +65,8 @@ export function FoodDelivery() {
   ];
 
   const currentLocationFoods = getCurrentLocationFoods();
-  const totalItemCount = currentLocationFoods.length;
-  const foodSubtotal = currentLocationFoods.reduce((sum, item) => sum + item.price, 0);
+  const totalItemCount = cartItems.length;
+  const foodSubtotal = cartItems.reduce((sum, item) => sum + item.price, 0);
   const selectedMode = deliveryModes.find(m => m.id === selectedModeId);
   const deliveryFee = selectedMode?.deliveryFee || 0;
   const total = foodSubtotal + deliveryFee;
@@ -226,16 +226,42 @@ export function FoodDelivery() {
 
           <button
             onClick={handleAddressClick}
-            className="flex-1 text-left overflow-hidden"
+            className="flex-1 overflow-hidden"
           >
-            <div className="flex items-center gap-2">
-              <span className="text-sm font-medium text-gray-900 truncate">
-                {getAddressDisplay()}
-              </span>
-              <span className="text-gray-400">→</span>
-              <span className="text-sm font-medium text-gray-700 truncate">
-                Delivery ({totalItemCount} item{totalItemCount !== 1 ? 's' : ''})
-              </span>
+            <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide">
+              <div className="flex items-center gap-2 flex-shrink-0">
+                <span className="text-sm font-medium text-gray-900 whitespace-nowrap">
+                  {deliveryLocation.split(',')[0] || 'Current Location'}
+                </span>
+                <div className="relative">
+                  <span className="text-sm">🍔</span>
+                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[8px] font-bold rounded-full w-3 h-3 flex items-center justify-center">
+                    {currentLocationFoods.length}
+                  </span>
+                </div>
+              </div>
+              {stops.map((stop, index) => (
+                <div key={stop.id} className="flex items-center gap-2 flex-shrink-0">
+                  <span className="text-gray-400">→</span>
+                  <span className="text-sm font-medium text-gray-700 whitespace-nowrap">
+                    {stop.address.split(',')[0] || `Stop ${index + 1}`}
+                  </span>
+                  {stop.foodIds.length > 0 && (
+                    <div className="relative">
+                      <span className="text-sm">🍔</span>
+                      <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[8px] font-bold rounded-full w-3 h-3 flex items-center justify-center">
+                        {stop.foodIds.length}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              ))}
+              <div className="flex items-center gap-2 flex-shrink-0">
+                <span className="text-gray-400">→</span>
+                <span className="text-sm font-medium text-green-600 whitespace-nowrap">
+                  Delivery ({totalItemCount} item{totalItemCount !== 1 ? 's' : ''})
+                </span>
+              </div>
             </div>
           </button>
 
@@ -377,7 +403,12 @@ export function FoodDelivery() {
                     <h3 className="font-bold text-gray-900 text-base mb-1">{mode.label}</h3>
                     <div className="flex items-center gap-2 text-sm text-gray-600">
                       <span>{mode.time}</span>
-                      <span>🍔{totalItemCount}</span>
+                      <div className="relative inline-block">
+                        <span>🍔</span>
+                        <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[8px] font-bold rounded-full w-3 h-3 flex items-center justify-center">
+                          {totalItemCount}
+                        </span>
+                      </div>
                     </div>
                     <p className="text-xs text-gray-500 mt-1">{mode.description}</p>
                   </div>

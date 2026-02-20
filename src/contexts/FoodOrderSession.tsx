@@ -31,6 +31,9 @@ interface FoodOrderSessionContextType {
   getCurrentLocationFoods: () => FoodItem[];
   removeStopsWithoutFoodOrAddress: () => void;
   setDeliveryMode: (modeId: string, fee: number) => void;
+  updateCurrentLocationFoodIds: (foodIds: string[]) => void;
+  getUnassignedFoodIds: () => string[];
+  getTotalFoodCount: () => number;
 }
 
 const FoodOrderSessionContext = createContext<FoodOrderSessionContextType | undefined>(undefined);
@@ -92,23 +95,34 @@ function FoodOrderSessionProviderInner({ children }: { children: React.ReactNode
     localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
   }, [currentLocationFoodIds, stops, deliveryLocation]);
 
-  const addFoodToCurrentLocation = (foodId: string) => {
-    setCurrentLocationFoodIds(prev => [...new Set([...prev, foodId])]);
-  };
-
-  const removeFoodFromCurrentLocation = (foodId: string) => {
-    setCurrentLocationFoodIds(prev => prev.filter(id => id !== foodId));
-  };
-
   const addStop = (stop: Stop) => {
     setStops(prev => [...prev, stop]);
   };
 
   const removeStop = (stopId: string) => {
+    const stopToRemove = stops.find(s => s.id === stopId);
+    if (stopToRemove) {
+      setCurrentLocationFoodIds(prev => [...new Set([...prev, ...stopToRemove.foodIds])]);
+    }
     setStops(prev => prev.filter(s => s.id !== stopId));
   };
 
   const updateStop = (stopId: string, updates: Partial<Stop>) => {
+    if (updates.foodIds) {
+      const stop = stops.find(s => s.id === stopId);
+      if (stop) {
+        const removedFoodIds = stop.foodIds.filter(id => !updates.foodIds!.includes(id));
+        const addedFoodIds = updates.foodIds.filter(id => !stop.foodIds.includes(id));
+
+        setCurrentLocationFoodIds(prev => {
+          let newIds = [...prev];
+          newIds = newIds.concat(removedFoodIds);
+          newIds = newIds.filter(id => !addedFoodIds.includes(id));
+          return [...new Set(newIds)];
+        });
+      }
+    }
+
     setStops(prev =>
       prev.map(stop =>
         stop.id === stopId ? { ...stop, ...updates } : stop
@@ -125,6 +139,11 @@ function FoodOrderSessionProviderInner({ children }: { children: React.ReactNode
   };
 
   const removeStopsWithoutFoodOrAddress = () => {
+    const stopsToRemove = stops.filter(stop => stop.foodIds.length === 0 || stop.address.trim() === '');
+    stopsToRemove.forEach(stop => {
+      setCurrentLocationFoodIds(prev => [...new Set([...prev, ...stop.foodIds])]);
+    });
+
     setStops(prev =>
       prev.filter(stop => stop.foodIds.length > 0 && stop.address.trim() !== '')
     );
@@ -132,6 +151,20 @@ function FoodOrderSessionProviderInner({ children }: { children: React.ReactNode
 
   const setDeliveryMode = (modeId: string, fee: number) => {
     console.log('Delivery mode set:', modeId, 'Fee:', fee);
+  };
+
+  const updateCurrentLocationFoodIds = (foodIds: string[]) => {
+    setCurrentLocationFoodIds(foodIds);
+  };
+
+  const getUnassignedFoodIds = () => {
+    const allCartItemIds = cartItems.map(item => item.id);
+    const assignedToStops = stops.flatMap(stop => stop.foodIds);
+    return allCartItemIds.filter(id => !assignedToStops.includes(id));
+  };
+
+  const getTotalFoodCount = () => {
+    return cartItems.length;
   };
 
   const value: FoodOrderSessionContextType = {
@@ -147,6 +180,9 @@ function FoodOrderSessionProviderInner({ children }: { children: React.ReactNode
     getCurrentLocationFoods,
     removeStopsWithoutFoodOrAddress,
     setDeliveryMode,
+    updateCurrentLocationFoodIds,
+    getUnassignedFoodIds,
+    getTotalFoodCount,
   };
 
   return (

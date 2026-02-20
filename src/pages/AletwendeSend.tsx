@@ -83,7 +83,7 @@ export const AletwendeSend: React.FC = () => {
       >
         <div className="flex items-center space-x-4">
           <motion.button
-            onClick={() => navigate(-1)}
+            onClick={() => navigate('/')}
             className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200 transition-colors"
             whileTap={{ scale: 0.95 }}
           >

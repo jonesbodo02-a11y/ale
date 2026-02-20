@@ -294,12 +294,21 @@ export function FoodiesRoute() {
                     )}
                     <motion.button
                       onClick={() => setShowStopModal(stop.id)}
-                      className="ml-2 px-2 py-1 bg-gray-50 rounded-full border border-gray-200 hover:bg-gray-100 transition-colors"
+                      className="relative ml-2 px-2 py-1 bg-gray-50 rounded-full border border-gray-200 hover:bg-gray-100 transition-colors"
                       whileTap={{ scale: 0.95 }}
                     >
                       <span className="text-[10px] font-medium text-gray-700">
-                        {stop.foodIds.length > 0 ? `+${stop.foodIds.length}` : 'Add food'}
+                        {stop.foodIds.length > 0 ? 'Add food' : 'Add food'}
                       </span>
+                      {stop.foodIds.length > 0 && (
+                        <motion.span
+                          initial={{ scale: 0 }}
+                          animate={{ scale: 1 }}
+                          className="absolute -top-1 -right-1 bg-red-500 text-white text-[8px] font-bold rounded-full w-4 h-4 flex items-center justify-center"
+                        >
+                          {stop.foodIds.length}
+                        </motion.span>
+                      )}
                     </motion.button>
                   </div>
                   <button

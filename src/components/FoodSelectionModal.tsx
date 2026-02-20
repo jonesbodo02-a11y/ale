@@ -18,7 +18,7 @@ export const FoodSelectionModal: React.FC<FoodSelectionModalProps> = ({
   stopId,
   mode,
 }) => {
-  const { cartItems, currentLocationFoodIds, updateStop, stops } = useFoodOrderSession();
+  const { cartItems, currentLocationFoodIds, updateStop, stops, getUnassignedFoodIds } = useFoodOrderSession();
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
@@ -32,12 +32,51 @@ export const FoodSelectionModal: React.FC<FoodSelectionModalProps> = ({
     }
   }, [isOpen, mode, stopId, currentLocationFoodIds, stops]);
 
+  const getAvailableItemsForStop = () => {
+    if (mode === 'current-location') {
+      return cartItems;
+    }
+
+    const currentStop = stops.find(s => s.id === stopId);
+    const currentStopFoodIds = currentStop?.foodIds || [];
+    const unassignedIds = getUnassignedFoodIds();
+    const availableIds = [...new Set([...currentStopFoodIds, ...unassignedIds])];
+
+    return cartItems.filter(item => availableIds.includes(item.id));
+  };
+
+  const isItemDisabled = (itemId: string) => {
+    if (mode === 'current-location') {
+      return true;
+    }
+
+    const unassignedCount = getUnassignedFoodIds().length;
+    const currentStop = stops.find(s => s.id === stopId);
+    const isCurrentlySelected = selectedIds.has(itemId);
+    const isInCurrentStop = currentStop?.foodIds.includes(itemId);
+
+    if (unassignedCount === 1 && !isCurrentlySelected && !isInCurrentStop) {
+      return true;
+    }
+
+    if (unassignedCount === 0 && !isInCurrentStop) {
+      return true;
+    }
+
+    return false;
+  };
+
   const toggleItem = (itemId: string) => {
+    if (mode === 'current-location') {
+      return;
+    }
+
+    if (isItemDisabled(itemId)) {
+      return;
+    }
+
     const newSelectedIds = new Set(selectedIds);
     if (newSelectedIds.has(itemId)) {
-      if (mode === 'current-location' && selectedIds.size === 1) {
-        return;
-      }
       newSelectedIds.delete(itemId);
     } else {
       newSelectedIds.add(itemId);
@@ -83,15 +122,19 @@ export const FoodSelectionModal: React.FC<FoodSelectionModalProps> = ({
             </div>
 
             <div className="px-6 py-4 space-y-3 pb-24">
-              {cartItems.map((item, index) => {
+              {getAvailableItemsForStop().map((item, index) => {
                 const isSelected = selectedIds.has(item.id);
+                const disabled = isItemDisabled(item.id);
 
                 return (
                   <motion.button
                     key={item.id}
                     onClick={() => toggleItem(item.id)}
+                    disabled={disabled}
                     className={`w-full p-4 rounded-2xl border-2 transition-all flex items-center space-x-4 ${
-                      isSelected
+                      disabled
+                        ? 'border-gray-200 bg-gray-100 opacity-50 cursor-not-allowed'
+                        : isSelected
                         ? 'border-green-600 bg-green-50'
                         : 'border-gray-200 bg-white hover:border-gray-300'
                     }`}
